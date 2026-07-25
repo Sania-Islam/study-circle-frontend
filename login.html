@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>StudyCircle — Sign In / Sign Up</title>
+<style>
+  :root{
+    --ink: #1B3A4B;
+    --ink-light: #2E4756;
+    --amber: #F4A259;
+    --amber-deep: #D9852F;
+    --muted: #6E8794;
+  }
+
+  *{ box-sizing: border-box; }
+  html, body{ margin:0; height:100%; }
+
+  body{
+    font-family: Calibri, Arial, sans-serif;
+    min-height: 100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    overflow:hidden;
+    background: linear-gradient(180deg, #9FD2EE 0%, #C7E6F5 38%, #E9F4FA 70%, #FBFDFE 100%);
+  }
+
+  .cloud{
+    position:absolute;
+    border-radius:50%;
+    background: rgba(255,255,255,0.55);
+    filter: blur(2px);
+  }
+  .cloud.c1{ width:340px; height:140px; top:8%; left:-60px; }
+  .cloud.c2{ width:260px; height:110px; top:62%; right:-40px; }
+  .cloud.c3{ width:200px; height:90px; bottom:6%; left:8%; opacity:0.7; }
+  .cloud.c4{ width:160px; height:70px; top:20%; right:14%; opacity:0.6; }
+
+  .ring{
+    position:absolute;
+    width: 560px; height:560px;
+    border-radius:50%;
+    border: 1px solid rgba(255,255,255,0.5);
+    top:50%; left:50%;
+    transform:translate(-50%,-50%);
+  }
+
+  .brand-mark{
+    position:absolute;
+    top: 26px; left: 30px;
+    display:flex; align-items:center; gap:9px;
+    font-family:'Bookman Old Style', Cambria, serif;
+    font-weight:bold;
+    font-size: 17px;
+    color: var(--ink);
+    z-index: 5;
+  }
+  .brand-mark .logo-sq{
+    width:30px; height:30px;
+    background: var(--ink);
+    border-radius: 8px;
+    display:flex; align-items:center; justify-content:center;
+    color:#fff;
+    font-size:15px;
+  }
+  .brand-mark span{ color: var(--amber-deep); }
+
+  .card{
+    position:relative;
+    z-index: 4;
+    width: 380px;
+    background: rgba(255,255,255,0.62);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255,255,255,0.8);
+    border-radius: 22px;
+    padding: 34px 32px 28px;
+    box-shadow: 0 30px 60px rgba(27,58,75,0.18);
+  }
+
+  .icon-badge{
+    width: 52px; height:52px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.85);
+    display:flex; align-items:center; justify-content:center;
+    margin: 0 auto 18px;
+    box-shadow: 0 6px 14px rgba(27,58,75,0.10);
+    font-size: 22px;
+  }
+
+  h1{
+    text-align:center;
+    font-family:'Bookman Old Style', Cambria, serif;
+    font-size: 22px;
+    color: var(--ink);
+    margin: 0 0 6px;
+  }
+  .sub{
+    text-align:center;
+    font-size: 13px;
+    color: var(--muted);
+    line-height:1.5;
+    margin: 0 0 22px;
+    padding: 0 6px;
+  }
+
+  .mode-toggle{
+    display:flex;
+    background: rgba(27,58,75,0.06);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 22px;
+  }
+  .mode-btn{
+    flex:1;
+    border:none;
+    background:none;
+    font-family:inherit;
+    font-weight:700;
+    font-size: 13px;
+    color: var(--muted);
+    padding: 9px 0;
+    border-radius: 9px;
+    cursor:pointer;
+    transition: background .15s, color .15s;
+  }
+  .mode-btn.active{
+    background: #fff;
+    color: var(--ink);
+    box-shadow: 0 2px 6px rgba(27,58,75,0.10);
+  }
+
+  .mode-panel{ display:none; }
+  .mode-panel.active{ display:block; }
+
+  .field{
+    position:relative;
+    margin-bottom: 12px;
+  }
+  .field .ic{
+    position:absolute;
+    left: 14px; top:50%;
+    transform:translateY(-50%);
+    font-size: 14px;
+    opacity:0.55;
+  }
+  .field input{
+    width:100%;
+    padding: 12px 14px 12px 38px;
+    border-radius: 12px;
+    border: 1px solid rgba(27,58,75,0.14);
+    background: rgba(255,255,255,0.7);
+    font-family: inherit;
+    font-size: 13.5px;
+    color: var(--ink);
+    outline:none;
+    transition: border-color .15s, background .15s;
+  }
+  .field input::placeholder{ color: rgba(110,135,148,0.8); }
+  .field input:focus{
+    border-color: var(--amber);
+    background: rgba(255,255,255,0.92);
+  }
+
+  .hint{
+    font-size: 11px;
+    color: var(--muted);
+    margin: -4px 0 14px 4px;
+  }
+
+  .err{
+    font-size: 11.5px;
+    color: #C0503A;
+    margin: -8px 0 12px 4px;
+    min-height: 14px;
+  }
+  .info{
+    font-size: 11.5px;
+    color: var(--ink-light);
+    background: rgba(244,162,89,0.16);
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin: -2px 0 12px;
+    display:none;
+  }
+  .info.show{ display:block; }
+
+  .pending-card{ display:none; text-align:center; }
+  .pending-card.show{ display:block; }
+  .pending-card .icon-badge{ background: rgba(244,162,89,0.2); font-size:26px; }
+  .pending-card h1{ margin-bottom:10px; }
+  .pending-card p{ font-size:13px; color:var(--muted); line-height:1.6; margin:0 0 18px; }
+  .pending-card .status-chip{
+    display:inline-block;
+    background: rgba(244,162,89,0.18);
+    color: var(--amber-deep);
+    font-weight:700;
+    font-size:12px;
+    padding: 5px 14px;
+    border-radius: 20px;
+    margin-bottom: 18px;
+  }
+  .pending-card .back-link{
+    font-size:12.5px; color:var(--ink); font-weight:600; cursor:pointer; text-decoration:underline;
+  }
+
+  .removed-banner{
+    display:none;
+    background: rgba(192,80,58,0.10);
+    border: 1px solid rgba(192,80,58,0.25);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    text-align:center;
+  }
+  .removed-banner.show{ display:block; }
+  .removed-banner .rb-icon{ font-size:22px; margin-bottom:6px; }
+  .removed-banner b{ display:block; color:#C0503A; font-size:13.5px; margin-bottom:4px; }
+  .removed-banner p{ margin:0; font-size:12px; color:var(--muted); line-height:1.5; }
+
+  .cta{
+    width:100%;
+    border:none;
+    background: var(--ink);
+    color:#fff;
+    font-family: inherit;
+    font-weight:700;
+    font-size: 14px;
+    padding: 13px;
+    border-radius: 12px;
+    cursor:pointer;
+    margin-top: 4px;
+    transition: background .15s, transform .1s;
+  }
+  .cta:hover{ background: var(--ink-light); }
+  .cta:active{ transform: scale(0.99); }
+  .cta:disabled{ opacity:0.6; cursor:default; }
+
+  .divider{
+    display:flex; align-items:center; gap:10px;
+    margin: 20px 0 16px;
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .divider::before, .divider::after{
+    content:""; flex:1; height:1px; background: rgba(27,58,75,0.12);
+  }
+
+  .social-row{
+    display:flex;
+    gap: 12px;
+    justify-content:center;
+  }
+  .social-btn{
+    width: 44px; height:44px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.75);
+    border: 1px solid rgba(27,58,75,0.1);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    font-size:16px;
+    transition: background .15s;
+  }
+  .social-btn:hover{ background: #fff; }
+
+  .footnote{
+    text-align:center;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 20px;
+  }
+  .footnote a{ color: var(--ink); font-weight:600; text-decoration:none; cursor:pointer; }
+  .footnote a:hover{ text-decoration:underline; }
+</style>
+</head>
+<body>
+
+  <div class="brand-mark"><span class="logo-sq">SC</span>Study<span>Circle</span></div>
+
+  <div class="cloud c1"></div>
+  <div class="cloud c2"></div>
+  <div class="cloud c3"></div>
+  <div class="cloud c4"></div>
+  <div class="ring"></div>
+
+  <form class="card" id="loginForm" novalidate>
+    <div class="icon-badge">📖</div>
+    <h1>Welcome to StudyCircle</h1>
+    <p class="sub">Connect with classmates, share notes, and study<br>together. Built by students, for students.</p>
+
+    <div class="removed-banner" id="removedBanner">
+      <div class="rb-icon">🚫</div>
+      <b>Your account was removed</b>
+      <p>An admin has removed your StudyCircle account. Switch to <strong>Sign Up</strong> below to request access again.</p>
+    </div>
+
+    <div class="mode-toggle">
+      <button type="button" class="mode-btn active" data-mode="signin">Sign In</button>
+      <button type="button" class="mode-btn" data-mode="signup">Sign Up</button>
+    </div>
+
+    <div class="mode-panel active" id="panel-signin">
+      <div class="field">
+        <span class="ic">👤</span>
+        <input type="text" id="signinUsername" placeholder="Username" autocomplete="username">
+      </div>
+      <div class="field" id="adminPasswordField" style="display:none;">
+        <span class="ic">🔒</span>
+        <input type="password" id="signinAdminPassword" placeholder="Admin password" autocomplete="current-password">
+      </div>
+      <div class="hint">Already approved? Just enter your username.</div>
+      <div class="hint" style="margin-top:-10px;">Official admin accounts: <b>admin1</b> (admin1@studycircle.app) and <b>admin2</b> (admin2@studycircle.app). No one else can sign in as an admin.</div>
+    </div>
+
+    <div class="mode-panel" id="panel-signup">
+      <div class="field">
+        <span class="ic">✉️</span>
+        <input type="email" id="signupEmail" placeholder="Email address" autocomplete="email">
+      </div>
+      <div class="field">
+        <span class="ic">🎓</span>
+        <input type="text" id="signupStudentId" placeholder="Student ID" autocomplete="off">
+      </div>
+      <div class="field">
+        <span class="ic">👤</span>
+        <input type="text" id="signupUsername" placeholder="Choose a username" autocomplete="off">
+      </div>
+      <div class="hint">Your account will need approval from a StudyCircle admin before you can sign in.</div>
+    </div>
+
+    <div class="err" id="errMsg"></div>
+    <div class="info" id="infoMsg"></div>
+
+    <button type="submit" class="cta" id="ctaBtn">Sign In</button>
+
+    <div class="divider">Or sign in with</div>
+    <div class="social-row">
+      <div class="social-btn" title="Google">G</div>
+      <div class="social-btn" title="Facebook">f</div>
+      <div class="social-btn" title="Apple">🍎</div>
+    </div>
+
+    <div class="footnote" id="demoFootnote">New here? <a id="demoFill">Use demo details</a></div>
+  </form>
+
+  <div class="card pending-card" id="pendingCard">
+    <div class="icon-badge">⏳</div>
+    <h1>Almost there</h1>
+    <div class="status-chip" id="pendingStatusChip">Pending approval</div>
+    <p id="pendingText">Your account request has been sent to the StudyCircle admins. You'll be able to sign in as soon as one of them approves your account.</p>
+    <span class="back-link" id="backToLogin">← Back to sign in</span>
+  </div>
+
+<script src="users.js"></script>
+<script>
+  const form = document.getElementById('loginForm');
+  const errMsg = document.getElementById('errMsg');
+  const infoMsg = document.getElementById('infoMsg');
+  const pendingCard = document.getElementById('pendingCard');
+  const ctaBtn = document.getElementById('ctaBtn');
+  const demoFootnote = document.getElementById('demoFootnote');
+
+  let mode = 'signin';
+
+  function clearMessages(){
+    errMsg.textContent = '';
+    infoMsg.classList.remove('show');
+  }
+
+  function setMode(newMode){
+    mode = newMode;
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+    document.getElementById('panel-signin').classList.toggle('active', mode === 'signin');
+    document.getElementById('panel-signup').classList.toggle('active', mode === 'signup');
+    ctaBtn.textContent = mode === 'signin' ? 'Sign In' : 'Create Account';
+    demoFootnote.innerHTML = mode === 'signin'
+      ? 'Already approved? <a id="demoFill">Try a demo account</a>'
+      : 'Just exploring? <a id="demoFill">Fill demo signup details</a>';
+    clearMessages();
+    rebindDemoFill();
+  }
+
+  function rebindDemoFill(){
+    const link = document.getElementById('demoFill');
+    if(!link) return;
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      if(mode === 'signin'){
+        document.getElementById('signinUsername').value = 'aisha_r';
+      } else {
+        document.getElementById('signupEmail').value = 'new.student@campus.edu';
+        document.getElementById('signupStudentId').value = 'STU-' + Math.floor(10000000 + Math.random()*89999999);
+        document.getElementById('signupUsername').value = 'new_student' + Math.floor(Math.random()*900 + 100);
+      }
+    });
+  }
+
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => setMode(btn.dataset.mode));
+  });
+
+  document.getElementById('backToLogin').addEventListener('click', () => {
+    pendingCard.classList.remove('show');
+    form.style.display = 'block';
+    form.reset();
+    clearMessages();
+  });
+
+  document.getElementById('signinUsername').addEventListener('input', (e) => {
+    const isAdmin = isAdminUsername(e.target.value.trim());
+    const pwField = document.getElementById('adminPasswordField');
+    if(isAdmin){
+      infoMsg.textContent = 'Admin account detected — you\'ll need your admin password.';
+      infoMsg.classList.add('show');
+      pwField.style.display = 'block';
+    } else {
+      infoMsg.classList.remove('show');
+      pwField.style.display = 'none';
+      document.getElementById('signinAdminPassword').value = '';
+    }
+  });
+
+  function showPending(user){
+    form.style.display = 'none';
+    pendingCard.classList.add('show');
+    const chip = document.getElementById('pendingStatusChip');
+    const text = document.getElementById('pendingText');
+    if(user.status === 'rejected'){
+      chip.textContent = 'Request declined';
+      chip.style.background = 'rgba(192,80,58,0.16)';
+      chip.style.color = '#C0503A';
+      text.textContent = 'An admin has declined this account request. If you think this is a mistake, reach out to a StudyCircle admin directly.';
+    } else {
+      chip.textContent = 'Pending approval';
+      chip.style.background = 'rgba(244,162,89,0.18)';
+      chip.style.color = '#D9852F';
+      text.textContent = 'Your account request has been sent to the StudyCircle admins. Once approved, just come back and sign in with your username — no need to sign up again.';
+    }
+  }
+
+  // NOTE: now async — checkAdminPassword / signInStudent talk to the real
+  // backend over the internet, so we need to "await" their answer.
+  async function handleSignIn(){
+    const username = document.getElementById('signinUsername').value.trim();
+    if(!username){
+      errMsg.textContent = 'Please enter your username.';
+      return;
+    }
+
+    if(isAdminUsername(username)){
+      const password = document.getElementById('signinAdminPassword').value;
+      if(!password){
+        errMsg.textContent = 'Please enter the admin password.';
+        return;
+      }
+      const ok = await checkAdminPassword(username, password);
+      if(!ok){
+        errMsg.textContent = 'Incorrect admin password.';
+        return;
+      }
+      clearMessages();
+      // checkAdminPassword already saved the session/token for us.
+      window.location.href = 'admin.html';
+      return;
+    }
+
+    const user = await signInStudent(username);
+    if(!user){
+      errMsg.textContent = "We don't recognize that username. New here? Switch to Sign Up.";
+      return;
+    }
+    if(user.status === 'approved'){
+      clearMessages();
+      // signInStudent already saved the session/token for us.
+      window.location.href = 'dashboard.html';
+    } else {
+      clearMessages();
+      showPending(user);
+    }
+  }
+
+  // NOTE: now async — signUpStudent talks to the real backend.
+  async function handleSignUp(){
+    const email = document.getElementById('signupEmail').value.trim();
+    const studentId = document.getElementById('signupStudentId').value.trim();
+    const username = document.getElementById('signupUsername').value.trim();
+
+    if(!email || !studentId || !username){
+      errMsg.textContent = 'Please fill in email, student ID, and a username.';
+      return;
+    }
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if(!emailOk){
+      errMsg.textContent = "That email address doesn't look right.";
+      return;
+    }
+    if(isAdminUsername(username)){
+      errMsg.textContent = 'That username is reserved. Please choose another.';
+      return;
+    }
+
+    const result = await signUpStudent({ email, studentId, username });
+    if(!result.ok){
+      errMsg.textContent = result.reason === 'network'
+        ? "Couldn't reach the server. Check your internet and try again."
+        : (result.reason || 'Something went wrong. Please try again.');
+      return;
+    }
+
+    clearMessages();
+    showPending(result.user);
+  }
+
+  // Submit handler is now async too, and disables the button while
+  // waiting so a person can't double-click and submit twice.
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    ctaBtn.disabled = true;
+    try{
+      if(mode === 'signin') await handleSignIn();
+      else await handleSignUp();
+    } finally {
+      ctaBtn.disabled = false;
+    }
+  });
+
+  rebindDemoFill();
+
+  (function checkRemovalReason(){
+    const params = new URLSearchParams(window.location.search);
+    if(params.get('reason') === 'removed'){
+      const banner = document.getElementById('removedBanner');
+      if(banner) banner.classList.add('show');
+      setMode('signup');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  })();
+</script>
+
+
+</body>
+</html>

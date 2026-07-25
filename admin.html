@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>StudyCircle — Admin Panel</title>
+<style>
+  :root{
+    --ink: #1B3A4B;
+    --ink-light: #2E4756;
+    --amber: #F4A259;
+    --amber-deep: #D9852F;
+    --paper: #EAF2F4;
+    --card: #FFFFFF;
+    --line: #D7E2E6;
+    --muted: #6E8794;
+    --good: #4F9D78;
+    --bad: #C0503A;
+  }
+
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family: Calibri, Arial, sans-serif; background: var(--paper); color: var(--ink-light); min-height:100vh; }
+
+  .topbar{
+    background: var(--ink);
+    color:#fff;
+    padding: 16px 32px;
+    display:flex; align-items:center; justify-content:space-between;
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+  .brand{ font-family:'Bookman Old Style', Cambria, serif; font-size:19px; font-weight:bold; }
+  .brand span{ color: var(--amber); }
+  .who{ font-size:13px; display:flex; align-items:center; gap:14px; color: rgba(255,255,255,0.85); flex-wrap: wrap; }
+  .who b{ color:#fff; }
+  .who a{ color: rgba(255,255,255,0.7); cursor:pointer; text-decoration:underline; }
+
+  .wrap{ max-width: 980px; margin: 0 auto; padding: 32px 28px 60px; }
+
+  h1.page-title{
+    font-family:'Bookman Old Style', Cambria, serif;
+    font-size: 25px;
+    color: var(--ink);
+    margin: 0 0 4px;
+  }
+  .page-sub{ font-size: 13.5px; color: var(--muted); margin: 0 0 26px; }
+
+  .stat-row{ display:flex; gap:16px; margin-bottom: 26px; flex-wrap:wrap; }
+  .stat-card{
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px 20px;
+    flex: 1;
+    min-width: 150px;
+  }
+  .stat-num{ font-family:'Bookman Old Style', serif; font-size: 26px; color: var(--ink); }
+  .stat-label{ font-size: 12px; color: var(--muted); text-transform:uppercase; letter-spacing:0.05em; margin-top:2px; }
+
+  .admins-note{
+    background: rgba(244,162,89,0.14);
+    border: 1px solid rgba(244,162,89,0.35);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 12.5px;
+    color: var(--ink-light);
+    margin-bottom: 26px;
+  }
+  .admins-note b{ color: var(--ink); }
+
+  .section-label{
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin: 30px 0 12px;
+    font-weight:700;
+  }
+  .section-label:first-of-type{ margin-top:0; }
+
+  table{ width:100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow:hidden; border: 1px solid var(--line); }
+  thead th{
+    text-align:left;
+    font-size: 11.5px;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    color: var(--muted);
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(27,58,75,0.03);
+  }
+  tbody td{
+    padding: 13px 16px;
+    font-size: 13.5px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: middle;
+  }
+  tbody tr:last-child td{ border-bottom:none; }
+
+  .uname{ font-weight:600; color: var(--ink); }
+  .muted-text{ color: var(--muted); font-size: 12.5px; }
+
+  .status-pill{
+    display:inline-block;
+    font-size: 11px;
+    font-weight:700;
+    padding: 4px 11px;
+    border-radius: 20px;
+  }
+  .status-pill.pending{ background: rgba(244,162,89,0.18); color: var(--amber-deep); }
+  .status-pill.approved{ background: rgba(79,157,120,0.16); color: var(--good); }
+  .status-pill.rejected{ background: rgba(192,80,58,0.14); color: var(--bad); }
+
+  .action-row{ display:flex; gap:8px; }
+  .btn{
+    border:none; cursor:pointer;
+    font-family:inherit; font-weight:700; font-size:12px;
+    padding: 7px 13px; border-radius: 7px;
+  }
+  .btn:disabled{ opacity:0.5; cursor:default; }
+  .btn-approve{ background: var(--good); color:#fff; }
+  .btn-approve:hover{ background: #437f63; }
+  .btn-reject{ background: rgba(192,80,58,0.12); color: var(--bad); }
+  .btn-reject:hover{ background: rgba(192,80,58,0.22); }
+  .btn-remove{ background: rgba(27,58,75,0.07); color: var(--ink-light); }
+  .btn-remove:hover{ background: rgba(27,58,75,0.14); }
+
+  .empty-row td{ text-align:center; color: var(--muted); padding: 30px 16px; font-size:13px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">Study<span>Circle</span> Admin</div>
+<div class="who"><a href="dashboard.html" style="color:rgba(255,255,255,0.85);text-decoration:none;font-weight:600;">📚 Batches & Notes</a> &middot; <a href="leaderboard.html" style="color:rgba(255,255,255,0.85);text-decoration:none;font-weight:600;">🏆 Leaderboard</a> &middot; <a href="community.html" style="color:rgba(255,255,255,0.85);text-decoration:none;font-weight:600;">💬 Study Help Chat</a> &middot; Signed in as <b id="adminLabel">Admin</b> <a id="signOutLink">Sign out</a></div>
+</div>
+
+<div class="wrap">
+  <h1 class="page-title">User Approvals</h1>
+  <p class="page-sub">Review new student sign-up requests before they can access StudyCircle.</p>
+
+  <div class="stat-row">
+    <div class="stat-card"><div class="stat-num" id="statPending">0</div><div class="stat-label">Pending</div></div>
+    <div class="stat-card"><div class="stat-num" id="statApproved">0</div><div class="stat-label">Approved</div></div>
+    <div class="stat-card"><div class="stat-num" id="statRejected">0</div><div class="stat-label">Rejected</div></div>
+    <div class="stat-card"><div class="stat-num" id="statPendingNotes">0</div><div class="stat-label">Notes Pending</div></div>
+  </div>
+
+  <div class="admins-note">
+    <b>2 admin seats</b> are configured for StudyCircle: <b>admin1</b> (admin1@studycircle.app) and <b>admin2</b> (admin2@studycircle.app). Either admin can approve or reject any request — actions here are visible to both. Admin sign-in requires a password, so no one else can claim to be an admin.
+  </div>
+
+  <div class="section-label">Pending Notes</div>
+  <table>
+    <thead>
+      <tr><th>Title</th><th>Batch / Course</th><th>Submitted by</th><th>Type</th><th>Size</th><th>Submitted</th><th>Action</th></tr>
+    </thead>
+    <tbody id="pendingNotesBody"></tbody>
+  </table>
+
+  <div class="section-label">Pending Requests</div>
+  <table>
+    <thead>
+      <tr><th>Username</th><th>Email</th><th>Student ID</th><th>Requested</th><th>Status</th><th>Action</th></tr>
+    </thead>
+    <tbody id="pendingBody"></tbody>
+  </table>
+
+  <div class="section-label">All Users</div>
+  <table>
+    <thead>
+      <tr><th>Username</th><th>Email</th><th>Student ID</th><th>Status</th><th>Action</th></tr>
+    </thead>
+    <tbody id="allBody"></tbody>
+  </table>
+</div>
+
+<script src="users.js"></script>
+<script src="data.js"></script>
+<script>
+  // Guard: only admins should land here
+  const session = getSession();
+  if(!session || session.role !== 'admin'){
+    window.location.href = 'login.html';
+  }
+
+  document.getElementById('adminLabel').textContent = session ? (session.label || session.username) : 'Admin';
+  document.getElementById('signOutLink').addEventListener('click', () => {
+    clearSession();
+    window.location.href = 'login.html';
+  });
+
+  function timeAgo(iso){
+    const diffMs = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diffMs / 60000);
+    if(mins < 1) return 'just now';
+    if(mins < 60) return mins + 'm ago';
+    const hrs = Math.floor(mins / 60);
+    if(hrs < 24) return hrs + 'h ago';
+    return Math.floor(hrs / 24) + 'd ago';
+  }
+
+  function courseLabel(batchId, courseId){
+    const batch = DATA.batches.find(b => b.id === batchId);
+    if(!batch) return `${batchId} / ${courseId}`;
+    const course = batch.courses.find(c => c.id === courseId);
+    return `${batch.name} / ${course ? course.name : courseId}`;
+  }
+
+  function renderPendingNotes(){
+    const pending = getPendingNotes();
+    document.getElementById('statPendingNotes').textContent = pending.length;
+
+    const body = document.getElementById('pendingNotesBody');
+    body.innerHTML = '';
+    if(pending.length === 0){
+      body.innerHTML = `<tr class="empty-row"><td colspan="7">No notes waiting for review.</td></tr>`;
+      return;
+    }
+    pending.forEach(n => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="uname">${n.title}</td>
+        <td class="muted-text">${courseLabel(n.batchId, n.courseId)}</td>
+        <td class="muted-text">${n.author}</td>
+        <td class="muted-text">${n.type}</td>
+        <td class="muted-text">${n.size}</td>
+        <td class="muted-text">${timeAgo(n.submittedAt)}</td>
+        <td>
+          <div class="action-row">
+            <button class="btn btn-approve" data-noteaction="approve" data-noteid="${n.id}">Approve</button>
+            <button class="btn btn-reject" data-noteaction="reject" data-noteid="${n.id}">Reject</button>
+          </div>
+        </td>
+      `;
+      body.appendChild(tr);
+    });
+  }
+
+  // NOTE: now async — getAllUsers() fetches the real user list from the
+  // backend (replaces the old loadUsers() which read from localStorage).
+  async function render(){
+    const users = await getAllUsers();
+    const pending = users.filter(u => u.status === 'pending');
+    const approved = users.filter(u => u.status === 'approved');
+    const rejected = users.filter(u => u.status === 'rejected');
+
+    document.getElementById('statPending').textContent = pending.length;
+    document.getElementById('statApproved').textContent = approved.length;
+    document.getElementById('statRejected').textContent = rejected.length;
+
+    const pendingBody = document.getElementById('pendingBody');
+    pendingBody.innerHTML = '';
+    if(pending.length === 0){
+      pendingBody.innerHTML = `<tr class="empty-row"><td colspan="6">No pending requests right now — new sign-ups will appear here.</td></tr>`;
+    } else {
+      pending.forEach(u => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="uname">${u.username}</td>
+          <td class="muted-text">${u.email}</td>
+          <td class="muted-text">${u.studentId || '—'}</td>
+          <td class="muted-text">${timeAgo(u.requestedAt)}</td>
+          <td><span class="status-pill pending">Pending</span></td>
+          <td>
+            <div class="action-row">
+              <button class="btn btn-approve" data-action="approve" data-user="${u.username}">Approve</button>
+              <button class="btn btn-reject" data-action="reject" data-user="${u.username}">Reject</button>
+            </div>
+          </td>
+        `;
+        pendingBody.appendChild(tr);
+      });
+    }
+
+    const allBody = document.getElementById('allBody');
+    allBody.innerHTML = '';
+    if(users.length === 0){
+      allBody.innerHTML = `<tr class="empty-row"><td colspan="5">No users yet.</td></tr>`;
+    } else {
+      users.forEach(u => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="uname">${u.username}</td>
+          <td class="muted-text">${u.email}</td>
+          <td class="muted-text">${u.studentId || '—'}</td>
+          <td><span class="status-pill ${u.status}">${u.status.charAt(0).toUpperCase() + u.status.slice(1)}</span></td>
+          <td>
+            <div class="action-row">
+              ${u.status !== 'approved' ? `<button class="btn btn-approve" data-action="approve" data-user="${u.username}">Approve</button>` : ''}
+              ${u.status !== 'rejected' ? `<button class="btn btn-reject" data-action="reject" data-user="${u.username}">Reject</button>` : ''}
+              <button class="btn btn-remove" data-action="remove" data-user="${u.username}">Remove</button>
+            </div>
+          </td>
+        `;
+        allBody.appendChild(tr);
+      });
+    }
+  }
+
+  // NOTE: now async — approveUser/rejectUser/removeUser talk to the real
+  // backend, so we await them before re-rendering the tables. Also disables
+  // the clicked button briefly so a person can't double-click an action.
+  document.body.addEventListener('click', async (e) => {
+    const noteBtn = e.target.closest('button[data-noteaction]');
+    if(noteBtn){
+      const id = noteBtn.dataset.noteid;
+      if(noteBtn.dataset.noteaction === 'approve') approveNote(id);
+      if(noteBtn.dataset.noteaction === 'reject') rejectNote(id);
+      renderPendingNotes();
+      return;
+    }
+
+    const btn = e.target.closest('button[data-action]');
+    if(!btn) return;
+    const action = btn.dataset.action;
+    const username = btn.dataset.user;
+
+    if(action === 'remove'){
+      const confirmed = window.confirm(
+        `Remove "${username}" from StudyCircle?\n\nThey will be signed out immediately and will need to sign up again to request access.`
+      );
+      if(!confirmed) return;
+    }
+
+    btn.disabled = true;
+    if(action === 'approve') await approveUser(username);
+    if(action === 'reject') await rejectUser(username);
+    if(action === 'remove') await removeUser(username);
+    await render();
+  });
+
+  render();
+  renderPendingNotes();
+</script>
+</body>
+</html>

@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>StudyCircle — Study Group Finder</title>
+<style>
+  :root{
+    --ink: #1B3A4B;
+    --ink-light: #2E4756;
+    --amber: #F4A259;
+    --amber-deep: #D9852F;
+    --paper: #EAF2F4;
+    --card: #FFFFFF;
+    --line: #D7E2E6;
+    --muted: #6E8794;
+    --good: #4F9D78;
+  }
+
+  *{box-sizing:border-box;}
+  body{margin:0;}
+
+  .app{
+    font-family: Calibri, Arial, sans-serif;
+    background: var(--paper);
+    color: var(--ink-light);
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 260px 1fr;
+  }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{
+    background: var(--ink);
+    color: #DCE8EC;
+    padding: 24px 0;
+    display:flex;
+    flex-direction:column;
+    gap: 4px;
+  }
+  .brand{
+    font-family: 'Bookman Old Style', Cambria, serif;
+    font-size: 21px;
+    font-weight: bold;
+    color: #fff;
+    padding: 0 22px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+    margin-bottom: 14px;
+    letter-spacing: 0.2px;
+  }
+  .brand span{ color: var(--amber); }
+
+  .nav-section-label{
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(220,232,236,0.45);
+    padding: 14px 22px 6px;
+  }
+
+  .streak-card{
+    margin: 4px 18px 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(244,162,89,0.12);
+    border: 1px solid rgba(244,162,89,0.25);
+    display:flex;
+    align-items:center;
+    gap: 10px;
+  }
+  .streak-flame{ font-size: 22px; line-height:1; }
+  .streak-info{ display:flex; align-items:baseline; gap:6px; }
+  .streak-num{ font-family:'Bookman Old Style', serif; font-size: 19px; font-weight:bold; color: #fff; }
+  .streak-label{ font-size: 11px; color: rgba(220,232,236,0.7); }
+  .streak-notes{
+    margin-left:auto;
+    font-size: 10.5px;
+    color: rgba(220,232,236,0.55);
+    text-align:right;
+    line-height:1.3;
+    max-width: 70px;
+  }
+
+  .leaderboard-link{
+    display:flex;
+    align-items:center;
+    gap: 8px;
+    padding: 10px 22px;
+    color: rgba(220,232,236,0.85);
+    text-decoration:none;
+    font-size: 14px;
+    transition: background .15s;
+  }
+  .leaderboard-link:hover{ background: rgba(255,255,255,0.06); color:#fff; }
+
+  .batch-item{
+    padding: 10px 22px;
+    cursor: pointer;
+    font-size: 14.5px;
+    border-left: 3px solid transparent;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    transition: background .15s;
+  }
+  .batch-item:hover{ background: rgba(255,255,255,0.06); }
+  .batch-item.active{
+    background: rgba(244,162,89,0.14);
+    border-left-color: var(--amber);
+    color: #fff;
+    font-weight: 600;
+  }
+  .batch-chevron{ font-size: 11px; opacity: 0.5; }
+
+  .course-list{
+    padding-left: 14px;
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height .25s ease;
+  }
+  .course-list.open{ max-height: 400px; }
+
+  .course-item{
+    padding: 8px 22px 8px 26px;
+    font-size: 13.5px;
+    cursor: pointer;
+    color: rgba(220,232,236,0.78);
+    border-left: 3px solid transparent;
+    position:relative;
+  }
+  .course-item::before{
+    content:"";
+    position:absolute; left:14px; top:50%;
+    width:6px; height:6px; border-radius:50%;
+    background: rgba(220,232,236,0.3);
+    transform:translateY(-50%);
+  }
+  .course-item:hover{ background: rgba(255,255,255,0.05); }
+  .course-item.active{
+    color:#fff;
+    background: rgba(255,255,255,0.08);
+    border-left-color: rgba(244,162,89,0.6);
+  }
+  .course-item.active::before{ background: var(--amber); }
+
+  .sidebar-foot{
+    margin-top:auto;
+    padding: 16px 22px;
+    font-size: 12px;
+    color: rgba(220,232,236,0.4);
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+
+  /* ---------- Main ---------- */
+  .main{
+    padding: 28px 36px 40px;
+    overflow-y:auto;
+  }
+
+  .topbar{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin-bottom: 22px;
+    flex-wrap:wrap;
+    gap: 10px;
+  }
+  .crumb{
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .crumb b{ color: var(--ink); }
+  .course-title{
+    font-family:'Bookman Old Style', Cambria, serif;
+    font-size: 27px;
+    color: var(--ink);
+    margin: 4px 0 0;
+  }
+
+  .tab-row{
+    display:flex;
+    gap: 6px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 22px;
+  }
+  .tab-btn{
+    border:none;
+    background:none;
+    font-family: Calibri, Arial, sans-serif;
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--muted);
+    padding: 10px 16px;
+    cursor:pointer;
+    position:relative;
+    top:1px;
+  }
+  .tab-btn.active{
+    color: var(--ink);
+    border-bottom: 2px solid var(--amber);
+  }
+  .tab-btn:hover:not(.active){ color: var(--ink-light); }
+
+  .panel{ display:none; }
+  .panel.active{ display:block; }
+
+  .stack-card{
+    position:relative;
+    background: var(--card);
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    padding: 16px 18px;
+    margin-bottom: 16px;
+  }
+  .stack-card::before, .stack-card::after{
+    content:"";
+    position:absolute;
+    left: 6px; right: 6px;
+    border-radius: 10px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    z-index:-1;
+  }
+  .stack-card::before{ top: -4px; height: 100%; opacity:0.7; }
+  .stack-card::after{ top: -8px; left:12px; right:12px; height:100%; opacity:0.4; }
+
+  .grid-3{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 900px){ .grid-3{ grid-template-columns: 1fr; } }
+
+  .note-card{
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    transition: box-shadow .15s, transform .15s;
+  }
+  .note-card:hover{ box-shadow: 0 6px 16px rgba(27,58,75,0.10); transform: translateY(-1px); }
+
+  .note-icon{
+    width: 36px; height:36px;
+    border-radius: 8px;
+    background: rgba(27,58,75,0.07);
+    color: var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    font-size: 16px;
+    font-weight:bold;
+    font-family: 'Bookman Old Style', serif;
+  }
+  .note-title{ font-weight:600; color:var(--ink); font-size: 14.5px; }
+  .note-meta{ font-size: 12px; color: var(--muted); }
+  .note-foot{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-top: 4px;
+    font-size: 12px;
+  }
+  .tag{
+    background: rgba(244,162,89,0.16);
+    color: var(--amber-deep);
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-weight:600;
+    font-size:11px;
+  }
+  .btn-dl{
+    border:none;
+    background: var(--ink);
+    color:#fff;
+    font-size:12px;
+    font-weight:600;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor:pointer;
+  }
+  .btn-dl:hover{ background: var(--ink-light); }
+
+  .upload-zone{
+    border: 1.5px dashed var(--line);
+    border-radius: 10px;
+    padding: 22px;
+    text-align:center;
+    color: var(--muted);
+    font-size: 13.5px;
+    margin-bottom: 20px;
+    background: rgba(255,255,255,0.5);
+    cursor:pointer;
+  }
+  .upload-zone:hover{ border-color: var(--amber); color: var(--amber-deep); }
+  .upload-zone.drag-over{
+    border-color: var(--amber);
+    background: rgba(244,162,89,0.08);
+    color: var(--amber-deep);
+  }
+  .upload-zone b{ display:block; color:var(--ink); font-size:14.5px; margin-bottom:4px; }
+  .upload-toast{
+    font-size: 12.5px;
+    color: var(--good);
+    text-align:center;
+    margin: -6px 0 14px;
+    display:none;
+  }
+  .upload-toast.show{ display:block; }
+
+  .section-label{
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin: 26px 0 12px;
+    font-weight:700;
+  }
+  .section-label:first-child{ margin-top:0; }
+
+  /* Chat groups */
+  .group-list{ display:flex; flex-direction:column; gap:12px; }
+  .group-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display:flex;
+    align-items:center;
+    gap: 14px;
+    cursor:pointer;
+  }
+  .group-card:hover{ box-shadow: 0 4px 14px rgba(27,58,75,0.08); }
+  .group-avatar{
+    width:44px;height:44px;border-radius:50%;
+    background: linear-gradient(135deg, var(--ink), var(--ink-light));
+    color:#fff; display:flex;align-items:center;justify-content:center;
+    font-family:'Bookman Old Style',serif; font-weight:bold; font-size:15px;
+    flex-shrink:0;
+  }
+  .group-info{ flex:1; min-width:0; }
+  .group-name{ font-weight:600; color:var(--ink); font-size:14.5px; }
+  .group-last{ font-size:12.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .group-meta{ text-align:right; flex-shrink:0; }
+  .group-time{ font-size:11px; color:var(--muted); }
+  .online-dot{ width:8px;height:8px;border-radius:50%;background:var(--good); display:inline-block; margin-right:5px; }
+  .member-count{ font-size:11.5px; color:var(--muted); margin-top:3px; }
+
+  .chat-window{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    margin-top: 18px;
+    overflow:hidden;
+  }
+  .chat-head{
+    padding: 14px 18px;
+    border-bottom:1px solid var(--line);
+    display:flex; align-items:center; gap:12px;
+  }
+  .chat-head .group-name{ font-size:15px; }
+  .chat-sub{ font-size:12px; color:var(--muted); }
+  .chat-body{
+    padding: 18px;
+    display:flex;
+    flex-direction:column;
+    gap: 12px;
+    min-height: 180px;
+  }
+  .msg{ max-width:70%; }
+  .msg.them{ align-self:flex-start; }
+  .msg.me{ align-self:flex-end; }
+  .msg-bubble{
+    padding: 9px 13px;
+    border-radius: 12px;
+    font-size: 13.5px;
+    line-height:1.4;
+  }
+  .msg.them .msg-bubble{ background: var(--paper); color: var(--ink-light); border-top-left-radius:3px; }
+  .msg.me .msg-bubble{ background: var(--ink); color:#fff; border-top-right-radius:3px; }
+  .msg-author{ font-size:11px; color:var(--muted); margin-bottom:3px; }
+  .chat-input-row{
+    display:flex; gap:10px;
+    padding: 14px 18px;
+    border-top:1px solid var(--line);
+  }
+  .chat-input-row input{
+    flex:1;
+    border:1px solid var(--line);
+    border-radius: 20px;
+    padding: 9px 16px;
+    font-size: 13.5px;
+    font-family:inherit;
+    outline:none;
+  }
+  .chat-input-row input:focus{ border-color: var(--amber); }
+  .send-btn{
+    border:none; background:var(--amber); color:#1B3A4B;
+    font-weight:700; font-size:13px;
+    padding: 9px 18px; border-radius:20px; cursor:pointer;
+  }
+  .send-btn:hover{ background: var(--amber-deep); color:#fff; }
+
+  .empty-state{
+    text-align:center;
+    padding: 50px 20px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR: Batches -> Courses -->
+  <nav class="sidebar" id="sidebar">
+    <div class="brand">Study<span>Circle</span></div>
+
+    <div class="streak-card" id="streakCard">
+      <div class="streak-flame">🔥</div>
+      <div class="streak-info">
+        <div class="streak-num" id="streakNum">0</div>
+        <div class="streak-label">day streak</div>
+      </div>
+      <div class="streak-notes" id="streakNotesCount">0 notes shared</div>
+    </div>
+
+    <div class="nav-section-label">Batches</div>
+    <div id="batchContainer"></div>
+
+    <div class="nav-section-label">More</div>
+    <a class="leaderboard-link" href="leaderboard.html">🏆 Leaderboard</a>
+    <a class="leaderboard-link" href="community.html">💬 Study Help Chat</a>
+
+    <div class="sidebar-foot">Signed in as <b style="color:#DCE8EC" id="userLabel">Aisha R.</b> &middot; <a id="signOutLink" style="color:rgba(220,232,236,0.6);cursor:pointer;text-decoration:underline;">Sign out</a></div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <div class="crumb" id="crumb">Batch 2026 &nbsp;/&nbsp; <b id="crumbCourse">Select a course</b></div>
+        <h1 class="course-title" id="courseTitle">Welcome back</h1>
+      </div>
+    </div>
+
+    <div class="tab-row" id="tabRow">
+      <button class="tab-btn active" data-tab="notes">Notes</button>
+      <button class="tab-btn" data-tab="groups">Chat Groups</button>
+    </div>
+
+    <!-- NOTES PANEL -->
+    <section class="panel active" id="panel-notes">
+      <div class="upload-zone" id="uploadZone">
+        <b>Share a note with your course</b>
+        Drop a file here or click to upload — PDF, DOCX, or image
+        <input type="file" id="fileInput" multiple style="display:none;" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.gif,.txt">
+      </div>
+      <div class="upload-toast" id="uploadToast"></div>
+
+      <div class="section-label">Lecture Notes</div>
+      <div class="grid-3" id="notesGrid"></div>
+    </section>
+
+    <!-- CHAT GROUPS PANEL -->
+    <section class="panel" id="panel-groups">
+      <div class="section-label">Your Study Groups</div>
+      <div class="group-list" id="groupList"></div>
+
+      <div class="chat-window" id="chatWindow" style="display:none;">
+        <div class="chat-head">
+          <div class="group-avatar" id="chatAvatar">DS</div>
+          <div>
+            <div class="group-name" id="chatGroupName">Group name</div>
+            <div class="chat-sub" id="chatGroupSub"><span class="online-dot"></span>4 online</div>
+          </div>
+        </div>
+        <div class="chat-body" id="chatBody"></div>
+        <div class="chat-input-row">
+          <input type="text" id="chatInput" placeholder="Message the group...">
+          <button class="send-btn" id="sendBtn">Send</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="users.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+  // Guard: only signed-in, approved students should land here.
+  // NOTE: this whole block is now async, because checking whether the
+  // student is still approved requires asking the real backend
+  // (via /api/auth/me) instead of looking at a local findUser() list,
+  // which no longer exists.
+  let currentUserRecord = null;
+
+  async function initDashboardGuard(){
+    const session = getSession();
+    // Allow both approved students AND admins to browse this page.
+    // (Everyone else gets sent to login.)
+    if(!session || (session.role !== 'student' && session.role !== 'admin')){
+      window.location.href = 'login.html';
+      return;
+    }
+
+    // Admins don't have a streak/notes-uploaded record (that's a
+    // student-only stat), so just show their label and skip the rest.
+    if(session.role === 'admin'){
+      const label = document.getElementById('userLabel');
+      if(label) label.textContent = session.username + ' (admin)';
+      const streakCard = document.getElementById('streakCard');
+      if(streakCard) streakCard.style.display = 'none'; // hide streak card, not relevant for admins
+      return;
+    }
+
+    try{
+      const res = await fetch(`${API_URL}/auth/me`, {
+        headers: { Authorization: `Bearer ${session.token}` },
+      });
+      if(!res.ok){
+        // Token invalid, or account no longer approved/exists (e.g. removed by an admin)
+        clearSession();
+        window.location.href = 'login.html?reason=removed';
+        return;
+      }
+      currentUserRecord = await res.json();
+
+      const label = document.getElementById('userLabel');
+      if(label) label.textContent = session.username;
+
+      const streakNum = document.getElementById('streakNum');
+      const streakNotesCount = document.getElementById('streakNotesCount');
+      if(streakNum) streakNum.textContent = currentUserRecord.currentStreak || 0;
+      if(streakNotesCount) streakNotesCount.textContent = (currentUserRecord.notesUploaded || 0) + ' notes shared';
+    }catch(e){
+      // Network error talking to the backend - send them back to login
+      // rather than showing a broken/half-loaded dashboard.
+      clearSession();
+      window.location.href = 'login.html';
+    }
+  }
+
+  initDashboardGuard();
+
+  // Every 15 seconds, re-check with the backend that this account is
+  // still approved (replaces the old wasRemoved()/findUser() polling,
+  // which relied on data that only ever existed in localStorage).
+  const _removeWatcher = setInterval(async () => {
+    const s = getSession();
+    if(!s || s.role !== 'student') return;
+    try{
+      const res = await fetch(`${API_URL}/auth/me`, {
+        headers: { Authorization: `Bearer ${s.token}` },
+      });
+      if(!res.ok){
+        clearInterval(_removeWatcher);
+        clearSession();
+        window.location.href = 'login.html?reason=removed';
+      }
+    }catch(e){ /* ignore transient network errors */ }
+  }, 15000);
+
+  const signOut = document.getElementById('signOutLink');
+  if(signOut){
+    signOut.addEventListener('click', () => {
+      clearInterval(_removeWatcher);
+      clearSession();
+      window.location.href = 'login.html';
+    });
+  }
+</script>
+
+</body>
+</html>

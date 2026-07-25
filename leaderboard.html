@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>StudyCircle — Leaderboard</title>
+<style>
+  :root{
+    --ink: #1B3A4B;
+    --ink-light: #2E4756;
+    --amber: #F4A259;
+    --amber-deep: #D9852F;
+    --paper: #EAF2F4;
+    --card: #FFFFFF;
+    --line: #D7E2E6;
+    --muted: #6E8794;
+    --good: #4F9D78;
+    --gold: #D4A017;
+    --silver: #9AA5AC;
+    --bronze: #B5703A;
+  }
+
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family: Calibri, Arial, sans-serif; background: var(--paper); color: var(--ink-light); min-height:100vh; }
+
+  .topbar{
+    background: var(--ink);
+    color:#fff;
+    padding: 16px 32px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .brand{ font-family:'Bookman Old Style', Cambria, serif; font-size:19px; font-weight:bold; }
+  .brand span{ color: var(--amber); }
+  .who{ font-size:13px; display:flex; align-items:center; gap:14px; color: rgba(255,255,255,0.85); }
+  .who a{ color: rgba(255,255,255,0.7); cursor:pointer; text-decoration:underline; }
+
+  .wrap{ max-width: 760px; margin: 0 auto; padding: 32px 28px 60px; }
+
+  h1.page-title{
+    font-family:'Bookman Old Style', Cambria, serif;
+    font-size: 25px;
+    color: var(--ink);
+    margin: 0 0 4px;
+  }
+  .page-sub{ font-size: 13.5px; color: var(--muted); margin: 0 0 26px; }
+
+  /* podium for top 3 */
+  .podium{
+    display:flex;
+    align-items:flex-end;
+    gap: 14px;
+    margin-bottom: 30px;
+  }
+  .podium-spot{
+    flex:1;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px 14px 8px 8px;
+    padding: 18px 12px 16px;
+    text-align:center;
+    position:relative;
+  }
+  .podium-spot.rank-1{ padding-top: 28px; border-color: rgba(212,160,23,0.4); box-shadow: 0 8px 22px rgba(212,160,23,0.18); }
+  .podium-spot.rank-2{ order:-1; }
+  .podium-rank-badge{
+    width: 30px; height:30px;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:bold; font-size:13px; color:#fff;
+    margin: 0 auto 8px;
+  }
+  .rank-1 .podium-rank-badge{ background: var(--gold); }
+  .rank-2 .podium-rank-badge{ background: var(--silver); }
+  .rank-3 .podium-rank-badge{ background: var(--bronze); }
+  .podium-avatar{
+    width: 46px; height:46px; border-radius:50%;
+    background: linear-gradient(135deg, var(--ink), var(--ink-light));
+    color:#fff; display:flex; align-items:center; justify-content:center;
+    font-family:'Bookman Old Style',serif; font-weight:bold; font-size:16px;
+    margin: 0 auto 8px;
+  }
+  .podium-name{ font-weight:700; color: var(--ink); font-size: 13.5px; margin-bottom: 4px; }
+  .podium-stat{ font-size: 11.5px; color: var(--muted); }
+  .podium-stat b{ color: var(--ink-light); }
+
+  .section-label{
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin: 0 0 12px;
+    font-weight:700;
+  }
+
+  table{ width:100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow:hidden; border: 1px solid var(--line); }
+  thead th{
+    text-align:left;
+    font-size: 11.5px;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    color: var(--muted);
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(27,58,75,0.03);
+  }
+  tbody td{
+    padding: 12px 16px;
+    font-size: 13.5px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: middle;
+  }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr.me{ background: rgba(244,162,89,0.08); }
+
+  .rank-cell{ font-weight:700; color: var(--ink); width: 36px; }
+  .uname{ font-weight:600; color: var(--ink); }
+  .uname .you-tag{ font-size:10px; color: var(--amber-deep); font-weight:700; margin-left:6px; }
+  .streak-chip{
+    display:inline-flex; align-items:center; gap:4px;
+    background: rgba(244,162,89,0.14);
+    color: var(--amber-deep);
+    font-weight:700;
+    font-size: 11.5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+  .empty-row td{ text-align:center; color: var(--muted); padding: 30px 16px; font-size:13px; }
+
+  .back-link{
+    display:inline-block;
+    margin-top: 22px;
+    font-size: 13px;
+    color: var(--ink);
+    font-weight:600;
+    text-decoration:none;
+  }
+  .back-link:hover{ text-decoration:underline; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">Study<span>Circle</span></div>
+  <div class="who"><a href="community.html" style="color:rgba(255,255,255,0.85);text-decoration:none;font-weight:600;">💬 Study Help Chat</a> &middot; Signed in as <b id="whoLabel" style="color:#fff;">—</b> <a id="signOutLink">Sign out</a></div>
+</div>
+
+<div class="wrap">
+  <h1 class="page-title">🏆 Leaderboard</h1>
+  <p class="page-sub">Ranked by total notes shared across StudyCircle. Keep your streak alive by uploading at least one note a day.</p>
+
+  <div class="podium" id="podium"></div>
+
+  <div class="section-label">Full Rankings</div>
+  <table>
+    <thead>
+      <tr><th>#</th><th>Student</th><th>Notes</th><th>Streak</th><th>Best Streak</th></tr>
+    </thead>
+    <tbody id="rankBody"></tbody>
+  </table>
+
+  <a class="back-link" href="dashboard.html">← Back to dashboard</a>
+</div>
+
+<script src="users.js"></script>
+<script>
+  const session = getSession();
+  if(!session){
+    window.location.href = 'login.html';
+  }
+
+  document.getElementById('whoLabel').textContent = session ? (session.label || session.username) : '—';
+  document.getElementById('signOutLink').addEventListener('click', () => {
+    clearInterval(_removeWatcher);
+    clearSession();
+    window.location.href = 'login.html';
+  });
+
+  // Eject if admin removes this user while they're on the leaderboard
+  const _removeWatcher = setInterval(() => {
+    const s = getSession();
+    if(!s || s.role !== 'student') return;
+    if(wasRemoved(s.username) || !findUser(s.username)){
+      clearInterval(_removeWatcher);
+      clearSession();
+      window.location.href = 'login.html?reason=removed';
+    }
+  }, 5000);
+
+  function initials(name){
+    return name.slice(0, 2).toUpperCase();
+  }
+
+  function render(){
+    const board = getLeaderboard();
+    const myUsername = session && session.role === 'student' ? session.username : null;
+
+    const podium = document.getElementById('podium');
+    podium.innerHTML = '';
+    const top3 = board.slice(0, 3);
+    if(top3.length === 0){
+      podium.innerHTML = '<div class="empty-row" style="width:100%;">No notes shared yet — be the first to upload one!</div>';
+    } else {
+      top3.forEach((u, i) => {
+        const rank = i + 1;
+        const spot = document.createElement('div');
+        spot.className = 'podium-spot rank-' + rank;
+        spot.innerHTML = `
+          <div class="podium-rank-badge">${rank}</div>
+          <div class="podium-avatar">${initials(u.username)}</div>
+          <div class="podium-name">${u.username}${u.username === myUsername ? ' (you)' : ''}</div>
+          <div class="podium-stat"><b>${u.notesUploaded}</b> notes &middot; <b>${u.currentStreak}</b>🔥</div>
+        `;
+        podium.appendChild(spot);
+      });
+    }
+
+    const body = document.getElementById('rankBody');
+    body.innerHTML = '';
+    if(board.length === 0){
+      body.innerHTML = `<tr class="empty-row"><td colspan="5">Nobody has shared a note yet.</td></tr>`;
+      return;
+    }
+    board.forEach((u, i) => {
+      const tr = document.createElement('tr');
+      if(u.username === myUsername) tr.className = 'me';
+      tr.innerHTML = `
+        <td class="rank-cell">${i + 1}</td>
+        <td class="uname">${u.username}${u.username === myUsername ? '<span class="you-tag">YOU</span>' : ''}</td>
+        <td>${u.notesUploaded}</td>
+        <td>${u.currentStreak > 0 ? `<span class="streak-chip">🔥 ${u.currentStreak}d</span>` : '<span style="color:var(--muted);font-size:12px;">—</span>'}</td>
+        <td style="color:var(--muted);">${u.longestStreak}d</td>
+      `;
+      body.appendChild(tr);
+    });
+  }
+
+  render();
+</script>
+</body>
+</html>
