@@ -97,7 +97,7 @@ function renderMain(){
   crumb.innerHTML = `${getBatch(activeBatchId).name} &nbsp;/&nbsp; <b>${course.name}</b>`;
   courseTitle.textContent = course.name;
 
-  renderNotes(course);
+  loadAndRenderNotes(course);
   renderGroups(course);
 }
 
@@ -129,29 +129,39 @@ function renderNotes(course){
   });
 }
 
+async function loadAndRenderNotes(course){
+  const notes = await fetchNotesForCourse(course.id);
+  course.notes = notes.map(n => ({
+    title: n.title,
+    author: n.author,
+    date: new Date(n.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+    type: n.type,
+    size: n.size,
+    fileUrl: n.fileUrl,
+    _id: n._id,
+  }));
+  renderNotes(course);
+}
+
 function viewNote(note){
-  if(note._fileObj){
-    const url = URL.createObjectURL(note._fileObj);
-    window.open(url, "_blank");
-    // Don't revoke immediately — the new tab needs the URL to stay valid
-    // while it's open. It'll be cleaned up when the tab/page closes.
+  if(note.fileUrl){
+    window.open(note.fileUrl, "_blank");
   } else {
-    showUploadToast(`"${note.title}" is a sample note in this prototype — no real file is attached.`);
+    showUploadToast(`"${note.title}" has no file attached.`);
   }
 }
 
 function downloadNote(note){
-  if(note._fileObj){
-    const url = URL.createObjectURL(note._fileObj);
+  if(note.fileUrl){
     const a = document.createElement("a");
-    a.href = url;
+    a.href = note.fileUrl;
     a.download = note.title;
+    a.target = "_blank";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
   } else {
-    showUploadToast(`"${note.title}" is a sample note in this prototype — no real file is attached.`);
+    showUploadToast(`"${note.title}" has no file attached.`);
   }
 }
 
@@ -249,7 +259,7 @@ function showUploadToast(message){
   showUploadToast._t = setTimeout(() => uploadToast.classList.remove("show"), 3200);
 }
 
-function handleFiles(fileList){
+async function handleFiles(fileList){
   if(!activeCourseId){
     showUploadToast("Pick a course first, then upload a note to it.");
     return;
@@ -258,48 +268,25 @@ function handleFiles(fileList){
   if(files.length === 0) return;
 
   const course = getCourse(activeBatchId, activeCourseId);
-  const uploader = currentUploaderName();
-  const dateLabel = todayLabel();
 
-  files.forEach(file => {
-    course.notes.unshift({
-      title: file.name,
-      author: uploader,
-      date: dateLabel,
-      type: classifyFile(file),
-      size: formatSize(file.size),
-      _fileObj: file, // kept in memory so "Download" can retrieve the real file this session
-    });
-  });
-
-  renderNotes(course);
-
-  const uploaderUsername = (() => {
-    try{
-      const raw = sessionStorage.getItem("studycircle_session_v2");
-      if(raw){
-        const session = JSON.parse(raw);
-        if(session && session.role === "student") return session.username;
-      }
-    }catch(err){ /* ignore */ }
-    return null;
-  })();
-
-  let streakNote = "";
-  if(uploaderUsername && typeof recordUpload === "function"){
-    const updated = recordUpload(uploaderUsername, files.length);
-    if(updated){
-      streakNote = ` You're on a ${updated.currentStreak}-day streak — ${updated.notesUploaded} notes total.`;
+  for(const file of files){
+    const result = await uploadNoteToServer(activeCourseId, file);
+    if(!result.ok){
+      showUploadToast(`Failed to upload "${file.name}": ${result.reason}`);
+      continue;
+    }
+    let streakNote = "";
+    if(result.streak){
+      streakNote = ` You're on a ${result.streak}-day streak — ${result.notesUploaded} notes total.`;
       const streakNum = document.getElementById("streakNum");
       const streakNotesCount = document.getElementById("streakNotesCount");
-      if(streakNum) streakNum.textContent = updated.currentStreak || 0;
-      if(streakNotesCount) streakNotesCount.textContent = (updated.notesUploaded || 0) + " notes shared";
+      if(streakNum) streakNum.textContent = result.streak;
+      if(streakNotesCount) streakNotesCount.textContent = result.notesUploaded + " notes shared";
     }
+    showUploadToast(`"${file.name}" was added to ${course.name}.${streakNote}`);
   }
 
-  showUploadToast((files.length === 1
-    ? `"${files[0].name}" was added to ${course.name}.`
-    : `${files.length} files were added to ${course.name}.`) + streakNote);
+  await loadAndRenderNotes(course);
 }
 
 uploadZone.addEventListener("click", () => fileInput.click());
