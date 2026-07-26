@@ -104,3 +104,25 @@ const DATA = {
 for(let n = 58; n <= 66; n++){
   DATA.batches.push(_buildBatch(n));
 }
+async function uploadNoteToServer(courseId, file){
+  const session = getSession();
+  const formData = new FormData();
+  formData.append("file", file);
+  try{
+    const res = await fetch(`${API_URL}/courses/${courseId}/notes`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${session?.token}` },
+      body: formData,
+    });
+    const data = await res.json();
+    if(!res.ok) return { ok: false, reason: data.message || "upload failed" };
+    return { ok: true, note: data.note, streak: data.streak, notesUploaded: data.notesUploaded };
+  }catch(e){ return { ok: false, reason: "network" }; }
+}
+
+async function fetchNotesForCourse(courseId){
+  try{
+    const res = await fetch(`${API_URL}/courses/${courseId}/notes`);
+    return res.ok ? res.json() : [];
+  }catch(e){ return []; }
+}
