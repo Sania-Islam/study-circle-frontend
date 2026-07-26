@@ -1,59 +1,45 @@
 // App state + rendering
 
-let activeBatchId = DATA.batches[0].id;
+let batchesData = [];
+let activeBatchNumber = null;
 let activeCourseId = null;
+let activeCourseDetail = null;
 let activeTab = "notes";
 let activeGroupIndex = null;
 
 const fileIcon = { PDF: "PDF", DOCX: "DOC", IMG: "IMG", FILE: "FILE" };
 
-function classifyFile(file){
-  const ext = (file.name.split(".").pop() || "").toLowerCase();
-  if(ext === "pdf") return "PDF";
-  if(["doc","docx","txt"].includes(ext)) return "DOCX";
-  if(["png","jpg","jpeg","gif","webp"].includes(ext)) return "IMG";
-  return "FILE";
+function formatDate(dateStr){
+  return new Date(dateStr).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-function formatSize(bytes){
-  if(bytes < 1024) return bytes + " B";
-  if(bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + " KB";
-  return (bytes / (1024 * 1024)).toFixed(1) + " MB";
-}
-
-function currentUploaderName(){
-  try{
-    const raw = sessionStorage.getItem("studycircle_session_v2");
-    if(raw){
-      const session = JSON.parse(raw);
-      if(session && session.username) return session.username;
-    }
-  }catch(err){ /* ignore */ }
-  return "You";
-}
-
-function todayLabel(){
-  return new Date().toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
-
-function getBatch(id){ return DATA.batches.find(b => b.id === id); }
-function getCourse(batchId, courseId){
-  return getBatch(batchId).courses.find(c => c.id === courseId);
+async function initApp(){
+  batchesData = await fetchBatches();
+  if(batchesData.length){
+    activeBatchNumber = batchesData[0].number;
+    batchesData[0].courses = await fetchCoursesForBatch(activeBatchNumber);
+  }
+  renderSidebar();
+  renderMain();
 }
 
 function renderSidebar(){
   const container = document.getElementById("batchContainer");
   container.innerHTML = "";
 
-  DATA.batches.forEach(batch => {
-    const isActiveBatch = batch.id === activeBatchId;
+  batchesData.forEach(batch => {
+    const isActiveBatch = batch.number === activeBatchNumber;
 
     const batchEl = document.createElement("div");
     batchEl.className = "batch-item" + (isActiveBatch ? " active" : "");
     batchEl.innerHTML = `<span>${batch.name}</span><span class="batch-chevron">${isActiveBatch ? "▾" : "▸"}</span>`;
-    batchEl.onclick = () => {
-      activeBatchId = batch.id;
+    batchEl.onclick = async () => {
+      activeBatchNumber = batch.number;
       activeCourseId = null;
+      activeCourseDetail = null;
+      if(!batch.courses){
+        batch.courses = await fetchCoursesForBatch(batch.number);
+      }
       renderSidebar();
       renderMain();
     };
@@ -61,17 +47,17 @@ function renderSidebar(){
 
     const courseList = document.createElement("div");
     courseList.className = "course-list" + (isActiveBatch ? " open" : "");
-    batch.courses.forEach(course => {
+    (batch.courses || []).forEach(course => {
       const cEl = document.createElement("div");
-      cEl.className = "course-item" + (course.id === activeCourseId ? " active" : "");
+      cEl.className = "course-item" + (course._id === activeCourseId ? " active" : "");
       cEl.textContent = course.name;
-      cEl.onclick = (e) => {
+      cEl.onclick = async (e) => {
         e.stopPropagation();
-        activeBatchId = batch.id;
-        activeCourseId = course.id;
+        activeBatchNumber = batch.number;
+        activeCourseId = course._id;
         activeGroupIndex = null;
         renderSidebar();
-        renderMain();
+        await openCourse(course._id);
       };
       courseList.appendChild(cEl);
     });
@@ -79,13 +65,18 @@ function renderSidebar(){
   });
 }
 
-function renderMain(){
-  const crumbCourse = document.getElementById("crumbCourse");
-  const courseTitle = document.getElementById("courseTitle");
-  const crumb = document.getElementById("crumb");
+async function openCourse(courseId){
+  activeCourseDetail = await fetchCourseDetail(courseId);
+  renderMain();
+}
 
-  if(!activeCourseId){
-    crumb.innerHTML = `<b>${getBatch(activeBatchId).name}</b>`;
+function renderMain(){
+  const crumb = document.getElementById("crumb");
+  const courseTitle = document.getElementById("courseTitle");
+  const activeBatch = batchesData.find(b => b.number === activeBatchNumber);
+
+  if(!activeCourseId || !activeCourseDetail){
+    crumb.innerHTML = `<b>${activeBatch ? activeBatch.name : ""}</b>`;
     courseTitle.textContent = "Select a course to get started";
     document.getElementById("notesGrid").innerHTML = `<div class="empty-state">Pick a course from the sidebar to see notes and study groups.</div>`;
     document.getElementById("groupList").innerHTML = "";
@@ -93,28 +84,29 @@ function renderMain(){
     return;
   }
 
-  const course = getCourse(activeBatchId, activeCourseId);
-  crumb.innerHTML = `${getBatch(activeBatchId).name} &nbsp;/&nbsp; <b>${course.name}</b>`;
+  const course = activeCourseDetail;
+  crumb.innerHTML = `Batch ${course.batchNumber} &nbsp;/&nbsp; <b>${course.name}</b>`;
   courseTitle.textContent = course.name;
 
-  loadAndRenderNotes(course);
+  renderNotes(course);
   renderGroups(course);
 }
 
 function renderNotes(course){
   const grid = document.getElementById("notesGrid");
   grid.innerHTML = "";
-  if(course.notes.length === 0){
+  const notes = course.notes || [];
+  if(notes.length === 0){
     grid.innerHTML = `<div class="empty-state">No notes shared in this course yet — be the first to upload one!</div>`;
     return;
   }
-  course.notes.forEach(note => {
+  notes.forEach(note => {
     const card = document.createElement("div");
     card.className = "note-card";
     card.innerHTML = `
       <div class="note-icon">${fileIcon[note.type] || "FILE"}</div>
       <div class="note-title">${note.title}</div>
-      <div class="note-meta">${note.author} &middot; ${note.date} &middot; ${note.size}</div>
+      <div class="note-meta">${note.author} &middot; ${formatDate(note.createdAt)} &middot; ${note.size}</div>
       <div class="note-foot">
         <span class="tag">${note.type}</span>
         <div style="display:flex; gap:6px;">
@@ -127,20 +119,6 @@ function renderNotes(course){
     card.querySelector(".btn-dl:not(.btn-view)").addEventListener("click", () => downloadNote(note));
     grid.appendChild(card);
   });
-}
-
-async function loadAndRenderNotes(course){
-  const notes = await fetchNotesForCourse(course.id);
-  course.notes = notes.map(n => ({
-    title: n.title,
-    author: n.author,
-    date: new Date(n.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
-    type: n.type,
-    size: n.size,
-    fileUrl: n.fileUrl,
-    _id: n._id,
-  }));
-  renderNotes(course);
 }
 
 function viewNote(note){
@@ -168,28 +146,30 @@ function downloadNote(note){
 function renderGroups(course){
   const list = document.getElementById("groupList");
   list.innerHTML = "";
-  if(course.groups.length === 0){
+  const groups = course.groups || [];
+  if(groups.length === 0){
     list.innerHTML = `<div class="empty-state">No study groups here yet — check back soon.</div>`;
   }
-  course.groups.forEach((group, idx) => {
+  groups.forEach((group, idx) => {
+    const lastMsg = group.messages && group.messages.length ? group.messages[group.messages.length - 1] : null;
     const card = document.createElement("div");
     card.className = "group-card";
     card.innerHTML = `
       <div class="group-avatar">${group.initials}</div>
       <div class="group-info">
         <div class="group-name">${group.name}</div>
-        <div class="group-last">${group.last}</div>
+        <div class="group-last">${lastMsg ? lastMsg.username + ": " + lastMsg.text : "No messages yet"}</div>
       </div>
       <div class="group-meta">
-        <div class="group-time">${group.time}</div>
-        <div class="member-count"><span class="online-dot"></span>${group.online} online &middot; ${group.members} members</div>
+        <div class="group-time">${lastMsg ? formatDate(lastMsg.createdAt) : ""}</div>
+        <div class="member-count">${(group.members || []).length} members</div>
       </div>
     `;
     card.onclick = () => openChat(course, idx);
     list.appendChild(card);
   });
 
-  if(activeGroupIndex !== null && course.groups[activeGroupIndex]){
+  if(activeGroupIndex !== null && groups[activeGroupIndex]){
     openChat(course, activeGroupIndex, true);
   } else {
     document.getElementById("chatWindow").style.display = "none";
@@ -203,14 +183,18 @@ function openChat(course, idx, skipRerender){
   win.style.display = "block";
   document.getElementById("chatAvatar").textContent = group.initials;
   document.getElementById("chatGroupName").textContent = group.name;
-  document.getElementById("chatGroupSub").innerHTML = `<span class="online-dot"></span>${group.online} online &middot; ${group.members} members`;
+  document.getElementById("chatGroupSub").innerHTML = `${(group.members || []).length} members`;
+
+  const session = getSession();
+  const myUsername = session ? session.username : null;
 
   const body = document.getElementById("chatBody");
   body.innerHTML = "";
-  group.messages.forEach(m => {
+  (group.messages || []).forEach(m => {
+    const isMe = m.username === myUsername;
     const div = document.createElement("div");
-    div.className = "msg " + m.from;
-    div.innerHTML = (m.from === "them" ? `<div class="msg-author">${m.author}</div>` : "") +
+    div.className = "msg " + (isMe ? "me" : "them");
+    div.innerHTML = (!isMe ? `<div class="msg-author">${m.username}</div>` : "") +
       `<div class="msg-bubble">${m.text}</div>`;
     body.appendChild(div);
   });
@@ -219,16 +203,16 @@ function openChat(course, idx, skipRerender){
   if(!skipRerender) win.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
-function sendMessage(){
-  if(!activeCourseId || activeGroupIndex === null) return;
+async function sendMessage(){
+  if(!activeCourseId || activeGroupIndex === null || !activeCourseDetail) return;
   const input = document.getElementById("chatInput");
   const text = input.value.trim();
   if(!text) return;
-  const course = getCourse(activeBatchId, activeCourseId);
-  course.groups[activeGroupIndex].messages.push({ from: "me", text });
-  course.groups[activeGroupIndex].last = "You: " + text;
+  const group = activeCourseDetail.groups[activeGroupIndex];
   input.value = "";
-  renderGroups(course);
+  await postGroupMessage(activeCourseId, group._id, text);
+  activeCourseDetail = await fetchCourseDetail(activeCourseId);
+  renderGroups(activeCourseDetail);
   document.getElementById("chatInput").focus();
 }
 
@@ -247,7 +231,7 @@ document.getElementById("chatInput").addEventListener("keydown", (e) => {
   if(e.key === "Enter") sendMessage();
 });
 
-// File upload: click-to-pick + drag & drop, both add real note cards
+// File upload
 const uploadZone = document.getElementById("uploadZone");
 const fileInput = document.getElementById("fileInput");
 const uploadToast = document.getElementById("uploadToast");
@@ -267,8 +251,6 @@ async function handleFiles(fileList){
   const files = Array.from(fileList || []);
   if(files.length === 0) return;
 
-  const course = getCourse(activeBatchId, activeCourseId);
-
   for(const file of files){
     const result = await uploadNoteToServer(activeCourseId, file);
     if(!result.ok){
@@ -283,17 +265,18 @@ async function handleFiles(fileList){
       if(streakNum) streakNum.textContent = result.streak;
       if(streakNotesCount) streakNotesCount.textContent = result.notesUploaded + " notes shared";
     }
-    showUploadToast(`"${file.name}" was added to ${course.name}.${streakNote}`);
+    showUploadToast(`"${file.name}" was added.${streakNote}`);
   }
 
-  await loadAndRenderNotes(course);
+  activeCourseDetail = await fetchCourseDetail(activeCourseId);
+  renderNotes(activeCourseDetail);
 }
 
 uploadZone.addEventListener("click", () => fileInput.click());
 
 fileInput.addEventListener("change", (e) => {
   handleFiles(e.target.files);
-  fileInput.value = ""; // allow re-uploading the same file name later
+  fileInput.value = "";
 });
 
 ["dragenter", "dragover"].forEach(evt => {
@@ -317,5 +300,4 @@ uploadZone.addEventListener("drop", (e) => {
 });
 
 // Init
-renderSidebar();
-renderMain();
+initApp();
