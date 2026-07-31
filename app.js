@@ -112,13 +112,27 @@ function renderNotes(course){
         <div style="display:flex; gap:6px;">
           <button class="btn-dl btn-view">View</button>
           <button class="btn-dl">Download</button>
+          <button class="btn-dl btn-delete" style="background:#c0392b;">Delete</button>
         </div>
       </div>
     `;
     card.querySelector(".btn-view").addEventListener("click", () => viewNote(note));
-    card.querySelector(".btn-dl:not(.btn-view)").addEventListener("click", () => downloadNote(note));
+    card.querySelector(".btn-dl:not(.btn-view):not(.btn-delete)").addEventListener("click", () => downloadNote(note));
+    card.querySelector(".btn-delete").addEventListener("click", () => deleteNoteCard(note));
     grid.appendChild(card);
   });
+}
+
+async function deleteNoteCard(note){
+  const confirmed = confirm(`"${note.title}" ডিলিট করতে চাও?`);
+  if(!confirmed) return;
+  const ok = await deleteNoteFromServer(note._id);
+  if(ok){
+    activeCourseDetail = await fetchCourseDetail(activeCourseId);
+    renderNotes(activeCourseDetail);
+  } else {
+    showUploadToast("Delete করা যায়নি — শুধু নিজের uploaded file অথবা admin delete করতে পারবে।");
+  }
 }
 
 function viewNote(note){
