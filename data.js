@@ -56,3 +56,13 @@ async function postGroupMessage(courseId, groupId, text){
     return res.ok;
   }catch(e){ return false; }
 }
+async function deleteNoteFromServer(noteId){
+  const session = getSession();
+  try{
+    const res = await fetch(`${API_URL}/notes/${noteId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${session?.token}` },
+    });
+    return res.ok;
+  }catch(e){ return false; }
+}
