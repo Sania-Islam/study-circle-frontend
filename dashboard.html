@@ -480,10 +480,14 @@
     <div class="sidebar-foot">Signed in as <b style="color:#DCE8EC" id="userLabel">Aisha R.</b> &middot; <a id="signOutLink" style="color:rgba(220,232,236,0.6);cursor:pointer;text-decoration:underline;">Sign out</a></div>
   </nav>
 
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
   <!-- MAIN -->
   <main class="main">
     <div class="topbar">
-      <div>
+      <div<div class="topbar">
+  <button class="hamburger-btn" id="hamburgerBtn">☰</button>
+  <div>>
         <div class="crumb" id="crumb">Batch 2026 &nbsp;/&nbsp; <b id="crumbCourse">Select a course</b></div>
         <h1 class="course-title" id="courseTitle">Welcome back</h1>
       </div>
@@ -588,7 +592,23 @@
   }
 
   initDashboardGuard();
+    // Mobile sidebar toggle
+const hamburgerBtn = document.getElementById('hamburgerBtn');
+const sidebarOverlay = document.getElementById('sidebarOverlay');
+const sidebarEl = document.getElementById('sidebar');
 
+if(hamburgerBtn){
+  hamburgerBtn.addEventListener('click', () => {
+    sidebarEl.classList.add('open');
+    sidebarOverlay.classList.add('show');
+  });
+}
+if(sidebarOverlay){
+  sidebarOverlay.addEventListener('click', () => {
+    sidebarEl.classList.remove('open');
+    sidebarOverlay.classList.remove('show');
+  });
+}
   // Every 15 seconds, re-check with the backend that this account is
   // still approved (replaces the old wasRemoved()/findUser() polling,
   // which relied on data that only ever existed in localStorage).
