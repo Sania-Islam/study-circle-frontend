@@ -450,7 +450,7 @@
 
   // NOTE: now async — checkAdminPassword / signInStudent talk to the real
   // backend over the internet, so we need to "await" their answer.
-  async function handleSignIn(){
+    async function handleSignIn(){
     const username = document.getElementById('signinUsername').value.trim();
     if(!username){
       errMsg.textContent = 'Please enter your username.';
@@ -469,14 +469,19 @@
         return;
       }
       clearMessages();
-      // checkAdminPassword already saved the session/token for us.
       window.location.href = 'admin.html';
       return;
     }
 
-    const user = await signInStudent(username);
-    if(!user){
-      errMsg.textContent = "We don't recognize that username. New here? Switch to Sign Up.";
+    const password = document.getElementById('signinPassword').value;
+    if(!password){
+      errMsg.textContent = 'Please enter your password.';
+      return;
+    }
+
+    const user = await signInStudent(username, password);
+       if(!user){
+      errMsg.textContent = "Incorrect username or password. New here? Switch to Sign Up.";
       return;
     }
     if(user.status === 'approved'){
@@ -490,13 +495,18 @@
   }
 
   // NOTE: now async — signUpStudent talks to the real backend.
-  async function handleSignUp(){
+    async function handleSignUp(){
     const email = document.getElementById('signupEmail').value.trim();
     const studentId = document.getElementById('signupStudentId').value.trim();
     const username = document.getElementById('signupUsername').value.trim();
+    const password = document.getElementById('signupPassword').value;
 
-    if(!email || !studentId || !username){
-      errMsg.textContent = 'Please fill in email, student ID, and a username.';
+    if(!email || !studentId || !username || !password){
+      errMsg.textContent = 'Please fill in email, student ID, username, and password.';
+      return;
+    }
+    if(password.length < 6){
+      errMsg.textContent = 'Password must be at least 6 characters.';
       return;
     }
     const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -509,7 +519,7 @@
       return;
     }
 
-    const result = await signUpStudent({ email, studentId, username });
+    const result = await signUpStudent({ email, studentId, username, password });
     if(!result.ok){
       errMsg.textContent = result.reason === 'network'
         ? "Couldn't reach the server. Check your internet and try again."
