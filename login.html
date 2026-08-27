@@ -306,15 +306,19 @@
         <span class="ic">👤</span>
         <input type="text" id="signinUsername" placeholder="Username" autocomplete="username">
       </div>
+      <div class="field" id="studentPasswordField">
+        <span class="ic">🔒</span>
+        <input type="password" id="signinPassword" placeholder="Password" autocomplete="current-password">
+      </div>
       <div class="field" id="adminPasswordField" style="display:none;">
         <span class="ic">🔒</span>
         <input type="password" id="signinAdminPassword" placeholder="Admin password" autocomplete="current-password">
       </div>
-      <div class="hint">Already approved? Just enter your username.</div>
+      <div class="hint">Enter your username and password.</div>
       <div class="hint" style="margin-top:-10px;">Official admin accounts: <b>admin1</b> (admin1@studycircle.app) and <b>admin2</b> (admin2@studycircle.app). No one else can sign in as an admin.</div>
     </div>
 
-    <div class="mode-panel" id="panel-signup">
+       <div class="mode-panel" id="panel-signup">
       <div class="field">
         <span class="ic">✉️</span>
         <input type="email" id="signupEmail" placeholder="Email address" autocomplete="email">
@@ -326,6 +330,10 @@
       <div class="field">
         <span class="ic">👤</span>
         <input type="text" id="signupUsername" placeholder="Choose a username" autocomplete="off">
+      </div>
+      <div class="field">
+        <span class="ic">🔒</span>
+        <input type="password" id="signupPassword" placeholder="Choose a password (min 6 characters)" autocomplete="new-password">
       </div>
       <div class="hint">Your account will need approval from a StudyCircle admin before you can sign in.</div>
     </div>
