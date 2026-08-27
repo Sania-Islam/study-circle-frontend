@@ -38,12 +38,12 @@ async function checkAdminPassword(username, password){
 
 // ── Sign-up / sign-in ─────────────────────────────────────────────────────────
 
-async function signUpStudent({ email, studentId, username }){
+async function signUpStudent({ email, studentId, username, password }){
   try{
     const res = await fetch(`${API_URL}/auth/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, studentId, username }),
+      body: JSON.stringify({ email, studentId, username, password }),
     });
     const data = await res.json();
     if(!res.ok) return { ok: false, reason: data.message || 'error' };
@@ -54,12 +54,12 @@ async function signUpStudent({ email, studentId, username }){
 // Returns: the user object if approved (and logs them in),
 // null if no account exists with that username,
 // or { status: 'pending' | 'rejected' } if they signed up but aren't approved yet.
-async function signInStudent(username){
+async function signInStudent(username, password){
   try{
     const res = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username }),
+      body: JSON.stringify({ username, password }),
     });
     const data = await res.json();
 
